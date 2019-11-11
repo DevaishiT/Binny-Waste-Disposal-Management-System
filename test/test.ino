@@ -37,9 +37,8 @@ int ledstate = 0;
 
 int arm_servo_lowered = 60;
 int arm_servo_raised = 135;
-// TODO: Caliberate values of table_edge, sweep_servo_max and sweep_servo_min
 int sweep_servo_min = 30;
-int sweep_servo_max = 120; 
+int sweep_servo_max = 120;
 int table_edge = 80;
 
 const byte numChars = 64;
@@ -83,14 +82,14 @@ void setup()
 
   // set the data rate for the SoftwareSerial port
   Serial.begin(9600);
-  SoftSerial.begin(9600);
-  delay(2000);
-  SoftSerial.println("Hi binnybotESP : binnybotArduino");
+  // SoftSerial.begin(9600);
+  // delay(2000);
+  // SoftSerial.println("Hi binnybotESP : binnybotArduino");
+  
 }
 
 void loop() {
-  readSoftwareSerialData();
-  processNewSoftwareSerialData();
+  
 }
 
 void stopISR(){
@@ -98,6 +97,8 @@ void stopISR(){
     onPathToT01 = false;
   if(onPathToT02)
     onPathToT02 = false;
+
+  ledstate = ~ ledstate;
 }
 
 void readSoftwareSerialData() {
@@ -235,18 +236,6 @@ void processNewSoftwareSerialData(){
       Serial.println("C02");
       checkT02();
     }
-  }
-}
-void lowerArmNow(){
-  for(int i=arm_servo_lowered; i<=arm_servo_raised; i++){
-    ArmServo.write(i);
-    delay(150);
-  }
-}
-void raiseArmNow(){
-  for(int i=arm_servo_raised; i>=arm_servo_lowered; i--){
-    ArmServo.write(i);
-    delay(150);
   }
 }
 
