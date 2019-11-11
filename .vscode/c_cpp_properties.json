@@ -15,7 +15,9 @@
                 "C:\\Program Files (x86)\\Arduino\\hardware\\tools\\avr\\avr\\include\\util\\**",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\tools\\avr\\lib\\gcc\\avr\\**",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\**",
-                "C:\\Program Files (x86)\\Arduino\\tools\\**"
+                "C:\\Program Files (x86)\\Arduino\\tools\\**",
+                "C:\\Users\\Hansraj Patel\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.6.0\\**",
+                "C:\\Users\\Hansraj Patel\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\**"
             ],
             "forcedInclude": [
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"

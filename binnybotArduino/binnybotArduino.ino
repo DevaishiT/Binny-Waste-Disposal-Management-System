@@ -1,22 +1,50 @@
 #include <SoftwareSerial.h>
 #include <String.h>
+#include <Servo.h>
+
+#define stopButton 3
+#define armServoPin 9
+#define sweepServoPin 10
+
+int arm_servo_lowered = 30;
+int arm_servo_raised = 120;
+int sweep_servo_min = 30;
+int sweep_servo_max = 120;
+int table_edge = 80;
 
 const byte numChars = 64;
 char receivedChars[numChars];
 boolean newData = false;
 
+boolean onPathToT01 = false;
+boolean onPathToT02 = false;
+
+Servo ArmServo;
+Servo SweepServo;
 SoftwareSerial SoftSerial(2, 3); // RX, TX
 
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(stopButton, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(stopButton), stopISR, RISING);
+
+  ArmServo.attach(armServoPin);
+  SweepServo.attach(sweepServoPin);
+
   // set the data rate for the SoftwareSerial port
   Serial.begin(9600);
   SoftSerial.begin(9600);
-  SoftSerial.println("Hi binnybotESP : binnybotArduino");
   delay(2000);
+  SoftSerial.println("Hi binnybotESP : binnybotArduino");
 }
 
+void stopISR(){
+  if(onPathToT01)
+    onPathToT01 = false;
+  if(onPathToT02)
+    onPathToT02 = false;
+}
 void loop() {
   readSoftwareSerialData();
   processNewSoftwareSerialData();
@@ -44,16 +72,18 @@ void readSoftwareSerialData() {
 }
 
 void approachT01(){
-    SoftSerial.println("Moving towards T01");
-for(int i=0; i<20; i++){
+  SoftSerial.println("Moving towards T01");
+  onPathToT01 = true;
+  while(onPathtoT01){
     digitalWrite(LED_BUILTIN, HIGH);
-    delay(300);
+    delay(100);
     digitalWrite(LED_BUILTIN, LOW);
     delay(50);
   }
+  
   SoftSerial.println("R01");
   delay(500);
-//  SoftSerial.println("Reached T01, start rotation");
+  SoftSerial.println("Reached T01, start rotation");
 }
 void checkT01(){
   for(int i=0; i<20; i++){
@@ -66,7 +96,8 @@ void checkT01(){
 }
 void approachT02(){
   SoftSerial.println("Moving towards T02");
-  for(int i=0; i<20; i++){
+  onPathToT02 = true;
+  while(onPathtoT02){
     digitalWrite(LED_BUILTIN, HIGH);
     delay(50);
     digitalWrite(LED_BUILTIN, LOW);
@@ -76,20 +107,48 @@ void approachT02(){
     digitalWrite(LED_BUILTIN, LOW);
     delay(300);
   }
+  delay(5000);
+  ArmServo.write(arm_servo_lowered);
+// TODO: Decrease the speed of Servo
+  delay(1000);
   SoftSerial.println("R02");
   delay(500);
-//  SoftSerial.println("Reached T02, start rotation");
+  SoftSerial.println("Reached T02, start rotation");
   
 }
 void checkT02(){
-  
-  for(int i=0; i<20; i++){
-    digitalWrite(LED_BUILTIN, HIGH);
+  ArmServo.write(arm_servo_raised);
+// TODO: Decrease the speed of Servo
+  delay(1000);
+  int minDist;
+  for(int i=sweep_servo_min; i<sweep_servo_max; i++){
+    SweepServo.write(i);
     delay(50);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(50);
+    int dist = checkDistance();
+    SoftSerial.print("Angle: ");
+    SoftSerial.print(i);
+    SoftSerial.print("Distance: ");
+    SoftSerial.println(dist);
+    if(dist < minDist){
+      minDist = dist;
+    }
   }
-  SoftSerial.println("Checked T02, going home");
+  if(minDist < table_edge){
+    ArmServo.write(arm_servo_lowered);
+  // TODO: Decrease the speed of Servo
+    delay(1000);
+    SoftSerial.println("R02");
+    delay(500);
+    SoftSerial.println("Remaining kachra found, rotate T02 again");
+  }
+  else{
+    SoftSerial.println("Checked T02, going home");
+  // TODO: Add code to go home
+  }
+}
+
+void checkDistance(){
+  ;
 }
 
 void processNewSoftwareSerialData(){
