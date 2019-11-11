@@ -27,11 +27,15 @@ EspMQTTClient client(
 );
 
 void buttonOnePressed(){
-  client.publish("binny/topic", "Go clean Table01 you Kamchor");
+  client.publish("binny/toBinnybotESP", "Go clean Table01 you Kamchor");
+  delay(20);
+  client.publish("binny/toBinnybotESP", "T01");
   Serial.println("Button One Pressed");  
 }
 void buttonTwoPressed(){
-  client.publish("binny/topic", "Table02... Now!!!");
+  client.publish("binny/toBinnybotESP", "Table02... Now!!!");
+  delay(20);
+  client.publish("binny/toBinnybotESP", "T02");
   Serial.println("Button Two Pressed");  
 }
 
@@ -49,32 +53,48 @@ void setup() {
 // This function is called once everything is connected (Wifi and MQTT)
 void onConnectionEstablished()
 {
-  // Subscribe to "binny/topic" and display received message to Serial
-  client.subscribe("binny/topic", [](const String & payload) {
+
+  // Publish a message to "binny/toBinnybotESP"
+  client.publish("binny/toBinnybotESP", "Hi BinnybotESP : TableESP");
+  
+// Subscribe to "binny/topic" and display received message to Serial
+  client.subscribe("binny/toTableESP", [](const String & payload) {
     Serial.println(payload);
-    if(payload == "T01"){
-      digitalWrite(led, HIGH);
-      delay(1000);
-      digitalWrite(led, LOW);
+    if(payload == "R01" || payload == "MR01" || payload == "MoR01"){
+      client.publish("binny/toBinnybotESP", "Rotating Table 01 now...");
+      for(int i=0; i<10; i++){
+        digitalWrite(led, HIGH);
+        delay(50);
+        digitalWrite(led, LOW);
+        delay(500);
+      }
+      client.publish("binny/toBinnybotESP", "Table 01 cleared. Initiate checker sweep");
+      delay(20);
+      client.publish("binny/toBinnybotESP", "C01");
     }
-    if(payload == "T02"){
-      digitalWrite(led, HIGH);
-      delay(500);
-      digitalWrite(led, LOW);
-      delay(500);
-      digitalWrite(led, HIGH);
-      delay(500);
-      digitalWrite(led, LOW);
+    if(payload == "R02" || payload == "MR02" || payload == "MoR02"){
+      client.publish("binny/toBinnybotESP", "Rotating Table 02 now...");
+      for(int i=0; i<10; i++){
+        digitalWrite(led, HIGH);
+        delay(50);
+        digitalWrite(led, LOW);
+        delay(50);
+        digitalWrite(led, HIGH);
+        delay(50);
+        digitalWrite(led, LOW);
+        delay(500);
+      }
+      client.publish("binny/toBinnybotESP", "Table 02 cleared. Initiate checker sweep");
+      delay(20);
+      client.publish("binny/toBinnybotESP", "C02");
     }
   });
 
-  // Publish a message to "binny/topic"
-  client.publish("binny/topic", "Ho gaya connect, 5 seconds baad dobara dekhta hu"); // You can activate the retain flag by setting the third parameter to true
 
   // Execute delayed instructions
-  client.executeDelayed(5 * 1000, []() {
-    client.publish("binny/topic", "Sab chumma chal raha, carry on");
-  });
+//  client.executeDelayed(5 * 1000, []() {
+//    client.publish("binny/toBinnybotESP", "Sab chumma chal raha, carry on");
+//  });
 }
 void loop() {
   if(digitalRead(btn1)){
