@@ -18,6 +18,9 @@
 #define btn1 14
 #define btn2 13
 
+#define M11 5
+//#define M12 6
+
 EspMQTTClient client(
   "Hansu",
   "hellohello",
@@ -48,12 +51,48 @@ void setup() {
   pinMode(led, OUTPUT);
   pinMode(btn1, INPUT);
   pinMode(btn2, INPUT);
+  pinMode(M11, OUTPUT);
+  //pinMode(M12, OUTPUT);
+  
+  digitalWrite(led, HIGH);
+  delay(200);
+  digitalWrite(led, LOW);
+  delay(200);
+  digitalWrite(led, HIGH);
+  delay(200);
+  digitalWrite(led, LOW);
+  delay(200);
+  digitalWrite(led, HIGH);
+  delay(200);
+  digitalWrite(led, LOW);
 }
 
 // This function is called once everything is connected (Wifi and MQTT)
 void onConnectionEstablished()
 {
-
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
+  delay(100);
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
+  delay(1000);
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
+  delay(100);
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
+  delay(1000);
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
+  delay(100);
+  digitalWrite(led, HIGH);
+  delay(100);
+  digitalWrite(led, LOW);
   // Publish a message to "binny/toBinnybotESP"
   client.publish("binny/toBinnybotESP", "Hi BinnybotESP : TableESP");
   
@@ -62,19 +101,24 @@ void onConnectionEstablished()
     Serial.println(payload);
     if(payload == "R01" || payload == "MR01" || payload == "MoR01"){
       client.publish("binny/toBinnybotESP", "Rotating Table 01 now...");
-      for(int i=0; i<10; i++){
+      for(int i=0; i<3; i++){
         digitalWrite(led, HIGH);
         delay(50);
         digitalWrite(led, LOW);
-        delay(500);
+        delay(100);
       }
-      client.publish("binny/toBinnybotESP", "Table 01 cleared. Initiate checker sweep");
-      delay(20);
+      //digitalWrite(M11,LOW);
+      analogWrite(M11,135);
+      delay(15000);
+      digitalWrite(M11,LOW);
+      delay(2000);
       client.publish("binny/toBinnybotESP", "C01");
+      delay(1000);
+      client.publish("binny/toBinnybotESP", "Table 01 cleared. Initiate checker sweep");
     }
     if(payload == "R02" || payload == "MR02" || payload == "MoR02"){
       client.publish("binny/toBinnybotESP", "Rotating Table 02 now...");
-      for(int i=0; i<10; i++){
+      for(int i=0; i<3; i++){
         digitalWrite(led, HIGH);
         delay(50);
         digitalWrite(led, LOW);
@@ -84,9 +128,14 @@ void onConnectionEstablished()
         digitalWrite(led, LOW);
         delay(500);
       }
-      client.publish("binny/toBinnybotESP", "Table 02 cleared. Initiate checker sweep");
-      delay(20);
+      //digitalWrite(M11,LOW);
+      analogWrite(M11,135);
+      delay(15000);
+      digitalWrite(M11,LOW);
+      delay(2000);
       client.publish("binny/toBinnybotESP", "C02");
+      delay(1000);
+      client.publish("binny/toBinnybotESP", "Table 02 cleared. Initiate checker sweep");
     }
   });
 

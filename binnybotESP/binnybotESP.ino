@@ -36,28 +36,33 @@ EspMQTTClient client(
 
 void setup() {
 
-  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
   SoftSerial.begin(BAUD_RATE, rx, tx, SWSERIAL_8N1, false, 95, 11);
-
-  SoftSerial.println("Hi binnybotArduino : binnyBotESP");
-  Serial.println("Hi binnybotArduino : binnyBotESP");
+  SoftSerial.println("binnyBotESP : Hi binnybotArduino");
   delay(2000);
   
-  client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
-
 }
 
 // This function is called once everything is connected (Wifi and MQTT)
 void onConnectionEstablished()
 {
-  // Subscribe to "binny/toBinnybotESP" and display received message to Serial
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  // Subscribe to "binny/toBinnybotESP" and display received message to SoftSerial
   client.subscribe("binny/toBinnybotESP", [](const String & payload) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
     SoftSerial.println(payload);
-    Serial.println(payload);
   });
 
 // Publish a message to "binny/toTableESP"
-  client.publish("binny/toTableESP", "Hi TableESP : binnyBotESP"); // You can activate the retain flag by setting the third parameter to true
+  client.publish("binny/toTableESP", "binnyBotESP : Hi TableESP"); // You can activate the retain flag by setting the third parameter to true
 
 // Execute delayed instructions
 //  client.executeDelayed(5 * 1000, []() {
@@ -93,13 +98,17 @@ void readSSData() {
 
 void processNewSSData(){
   if (newData == true) {
-    Serial.println(receivedChars);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
     if(receivedChars[0] == 'R' &&receivedChars[1] == '0' && receivedChars[2] == '1'){
-      Serial.println("R01");
       client.publish("binny/toTableESP", "R01");
     }
     if(receivedChars[0] == 'R' &&receivedChars[1] == '0' && receivedChars[2] == '2'){
-      Serial.println("R02");
       client.publish("binny/toTableESP", "R02");
     }
     client.publish("binny/toTableESP", receivedChars);

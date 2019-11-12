@@ -37,9 +37,10 @@ int ledstate = 0;
 
 int arm_servo_lowered = 60;
 int arm_servo_raised = 135;
+// TODO: Caliberate values of table_edge, sweep_servo_max and sweep_servo_min
 int sweep_servo_min = 30;
-int sweep_servo_max = 120;
-int table_edge = 80;
+int sweep_servo_max = 120; 
+int table_edge = 120;
 
 const byte numChars = 64;
 char receivedChars[numChars];
@@ -82,14 +83,23 @@ void setup()
 
   // set the data rate for the SoftwareSerial port
   Serial.begin(9600);
-  // SoftSerial.begin(9600);
-  // delay(2000);
-  // SoftSerial.println("Hi binnybotESP : binnybotArduino");
-  
+  SoftSerial.begin(9600);
+  delay(2000);
+  SoftSerial.println("Hi binnybotESP : binnybotArduino");
+
+  onPathToT01 = true;
+  digitalWrite(ledgreen, HIGH);
 }
 
 void loop() {
-  
+  // readSoftwareSerialData();
+  // processNewSoftwareSerialData();
+  while(onPathToT01){
+    followPath(1);
+  }
+  stop();
+  digitalWrite(ledred, HIGH);
+  digitalWrite(ledgreen, LOW);
 }
 
 void stopISR(){
@@ -97,8 +107,6 @@ void stopISR(){
     onPathToT01 = false;
   if(onPathToT02)
     onPathToT02 = false;
-
-  ledstate = ~ ledstate;
 }
 
 void readSoftwareSerialData() {
@@ -238,6 +246,18 @@ void processNewSoftwareSerialData(){
     }
   }
 }
+void lowerArmNow(){
+  for(int i=arm_servo_lowered; i<=arm_servo_raised; i++){
+    ArmServo.write(i);
+    delay(150);
+  }
+}
+void raiseArmNow(){
+  for(int i=arm_servo_raised; i>=arm_servo_lowered; i--){
+    ArmServo.write(i);
+    delay(150);
+  }
+}
 
 void forward(){
   digitalWrite(M12, LOW);
@@ -254,4 +274,93 @@ void stop(){
   digitalWrite(M12, LOW);
   digitalWrite(M21, LOW);
   digitalWrite(M22, LOW);
+}
+
+void followPath(int dir){
+  //int dir = 1; /* 1 = LEFT, 0 = RIGHT */
+  int s1=digitalRead(L1);
+  int s2=digitalRead(L2);
+  int s3=digitalRead(L3);
+  int s4=digitalRead(L4);
+
+  digitalWrite(ledyellow1, s1);
+  digitalWrite(ledyellow2, s2);
+  digitalWrite(ledyellow3, s3);
+  digitalWrite(ledyellow4, s4);
+// 1111
+  if(s1 && s2 && s3 && s4){
+    backward();
+    analogWrite(M12, 120);
+    analogWrite(M22, 120);
+    delay(500);
+  }
+// 1110
+  else if(s1 && s2 && s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 30);
+    delay(50);
+  }
+// 1100
+  else if(s1 && s2 && !s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
+    delay(50);
+  }
+//1001
+  else if(s1 && !s2 && !s3 && s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 1000
+  else if(s1 && !s2 && !s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
+    delay(50);
+  }
+// 0111
+  if(!s1 && s2 && s3 && s4){
+    forward();
+    analogWrite(M11, 30);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0011
+  else if(!s1 && !s2 && s3 && s4){
+    forward();
+    analogWrite(M11, 60);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0001
+  else if(!s1 && !s2 && !s3 && s4){
+    forward();
+    analogWrite(M11, 60);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0000
+  else if(!s1 && !s2 && !s3 && !s4){
+    if (dir){
+      forward();
+      analogWrite(M11, 30);
+      analogWrite(M21, 120);
+    }
+    if (!dir){
+      forward();
+      analogWrite(M11, 120);
+      analogWrite(M21, 30);
+    }
+    delay(50);
+  }
+// 0101
+  else {
+    forward();
+      analogWrite(M11, 120);
+      analogWrite(M21, 120);
+  }
 }

@@ -31,27 +31,21 @@ int ledstate = 0;
 #define M21 7
 #define M22 6
 
-
-#define ss_rx 2
-#define ss_tx 3
-
-int arm_servo_lowered = 60;
-int arm_servo_raised = 135;
+int arm_servo_lowered = 135;
+int arm_servo_raised = 50;
 // TODO: Caliberate values of table_edge, sweep_servo_max and sweep_servo_min
-int sweep_servo_min = 30;
-int sweep_servo_max = 120; 
+int sweep_servo_min = 70;
+int sweep_servo_max = 160; 
 int table_edge = 80;
 
 const byte numChars = 64;
 char receivedChars[numChars];
 boolean newData = false;
 
-boolean onPathToT01 = false;
-boolean onPathToT02 = false;
+boolean onPath = false;
 
 Servo ArmServo;
 Servo SweepServo;
-SoftwareSerial SoftSerial(ss_rx, ss_tx); // RX, TX
 
 void setup()
 {
@@ -79,13 +73,14 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(stopButton), stopISR, RISING);
 
   ArmServo.attach(armServoPin);
+  ArmServo.write(arm_servo_raised);
   SweepServo.attach(sweepServoPin);
+  SweepServo.write(sweep_servo_min);
 
   // set the data rate for the SoftwareSerial port
-  Serial.begin(9600);
-  SoftSerial.begin(9600);
+  Serial1.begin(9600);
   delay(2000);
-  SoftSerial.println("Hi binnybotESP : binnybotArduino");
+  Serial1.println("binnybotArduino : Hi binnybotESP");
 }
 
 void loop() {
@@ -94,18 +89,18 @@ void loop() {
 }
 
 void stopISR(){
-  if(onPathToT01)
-    onPathToT01 = false;
-  if(onPathToT02)
-    onPathToT02 = false;
+  if(onPath)
+    onPath = false;
+  if(onPath)
+    onPath = false;
 }
 
 void readSoftwareSerialData() {
   static byte ndx = 0;
   char endMarker = '\n';
   char c;
-  while (SoftSerial.available() > 0 && newData == false) {
-    c = SoftSerial.read();
+  while (Serial1.available() > 0 && newData == false) {
+    c = Serial1.read();
     if (c != endMarker) {
       receivedChars[ndx] = c;
       ndx++;
@@ -121,79 +116,141 @@ void readSoftwareSerialData() {
   }
 }
 
-void approachT01(){
-  SoftSerial.println("Moving towards T01");
-  onPathToT01 = true;
-  while(onPathToT01){
-    digitalWrite(LED_BUILTIN, HIGH);
+void processNewSoftwareSerialData(){
+  if (newData == true){
+    digitalWrite(ledgreen, HIGH);
     delay(100);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(50);
+    digitalWrite(ledgreen, LOW);
+    delay(100);
+    digitalWrite(ledgreen, HIGH);
+    delay(100);
+    digitalWrite(ledgreen, LOW);
+
+    delay(1000);
+    Serial1.print("binnybotArduino received: ");
+    Serial1.println(receivedChars);
+    newData = false;
+
+    if(receivedChars[0] == 'T' &&receivedChars[1] == '0' && receivedChars[2] == '1'){
+      approachT01();
+    }
+    if(receivedChars[0] == 'C' &&receivedChars[1] == '0' && receivedChars[2] == '1'){
+      checkT01();
+    }
+    if(receivedChars[0] == 'T' &&receivedChars[1] == '0' && receivedChars[2] == '2'){
+      approachT02();
+    }
+    if(receivedChars[0] == 'C' &&receivedChars[1] == '0' && receivedChars[2] == '2'){
+      checkT02();
+    }
   }
-  
-  SoftSerial.println("R01");
-  delay(500);
-  SoftSerial.println("Reached T01, start rotation");
+}
+
+void approachT01(){
+  delay(1000);
+  Serial1.println("Moving towards T01");
+  onPath = true;
+
+  while(onPath){
+    followPath(1);
+  }
+  stop();
+  delay(1000);
+  Serial1.println("Reached T01, lowering arm");
+  lowerArmNow();
+  delay(1000);
+  Serial1.println("R01");
+  delay(1000);
+  Serial1.println("Reached T01, start rotation");
 }
 void checkT01(){
-  for(int i=0; i<20; i++){
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(50);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(500);
-  }
-  SoftSerial.println("Checked T01, going home");
-}
-void approachT02(){
-  SoftSerial.println("Moving towards T02");
-  onPathToT02 = true;
-  while(onPathToT02){
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(50);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(50);
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(50);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(300);
-  }
-  delay(5000);
-  ArmServo.write(arm_servo_lowered);
-// TODO: Decrease the speed of Servo
   delay(1000);
-  SoftSerial.println("R02");
-  delay(500);
-  SoftSerial.println("Reached T02, start rotation");
-  
-}
-void checkT02(){
-  ArmServo.write(arm_servo_raised);
-// TODO: Decrease the speed of Servo
+  raiseArmNow();
   delay(1000);
-  int minDist;
+  int minDist = INT16_MAX;
   for(int i=sweep_servo_min; i<sweep_servo_max; i++){
     SweepServo.write(i);
     delay(50);
     int dist = checkDistance();
-    SoftSerial.print("Angle: ");
-    SoftSerial.print(i);
-    SoftSerial.print("Distance: ");
-    SoftSerial.println(dist);
+    Serial1.print("Angle: ");
+    Serial1.print(i);
+    Serial1.print("Distance: ");
+    Serial1.println(dist);
     if(dist < minDist){
       minDist = dist;
     }
   }
   if(minDist < table_edge){
-    ArmServo.write(arm_servo_lowered);
-  // TODO: Decrease the speed of Servo
+    lowerArmNow();
     delay(1000);
-    SoftSerial.println("R02");
-    delay(500);
-    SoftSerial.println("Remaining kachra found, rotate T02 again");
+    Serial1.println("R01");
+    delay(1000);
+    Serial1.println("Remaining kachra found, rotate T01 again");
   }
   else{
-    SoftSerial.println("Checked T02, going home");
-  // TODO: Add code to go home
+    delay(1000);
+    Serial1.println("Checked T01, going home");
+    takeuturn();
+    onPath = true;
+    while (onPath)
+    {
+      followPath(1);
+    }
+    stop();
+    takeuturn();
+  }
+}
+void approachT02(){
+  delay(1000);
+  Serial1.println("Moving towards T02");
+  onPath = true;
+
+  while(onPath){
+    followPath(0);
+  }
+  stop();
+  lowerArmNow();
+
+  delay(1000);
+  Serial1.println("R02");
+  delay(1000);
+  Serial1.println("Reached T02, start rotation");
+}
+void checkT02(){
+  delay(1000);
+  raiseArmNow();
+  delay(1000);
+  int minDist = INT16_MAX;
+  for(int i=sweep_servo_min; i<sweep_servo_max; i++){
+    SweepServo.write(i);
+    delay(50);
+    int dist = checkDistance();
+    Serial1.print("Angle: ");
+    Serial1.print(i);
+    Serial1.print("Distance: ");
+    Serial1.println(dist);
+    if(dist < minDist){
+      minDist = dist;
+    }
+  }
+  if(minDist < table_edge){
+    lowerArmNow();
+    delay(1000);
+    Serial1.println("R02");
+    delay(1000);
+    Serial1.println("Remaining kachra found, rotate T02 again");
+  }
+  else{
+    delay(1000);
+    Serial1.println("Checked T02, going home");
+    takeuturn();
+    onPath = true;
+    while (onPath)
+    {
+      followPath(1);
+    }
+    stop();
+    takeuturn();
   }
 }
 
@@ -213,30 +270,6 @@ int checkDistance(){
   return ping_distance;
 }
 
-void processNewSoftwareSerialData(){
-  if (newData == true){
-    Serial.println(receivedChars);
-    SoftSerial.println(receivedChars);
-    newData = false;
-
-    if(receivedChars[0] == 'T' &&receivedChars[1] == '0' && receivedChars[2] == '1'){
-      Serial.println("T01");
-      approachT01();
-    }
-    if(receivedChars[0] == 'C' &&receivedChars[1] == '0' && receivedChars[2] == '1'){
-      Serial.println("C01");
-      checkT01();
-    }
-    if(receivedChars[0] == 'T' &&receivedChars[1] == '0' && receivedChars[2] == '2'){
-      Serial.println("T02");
-      approachT02();
-    }
-    if(receivedChars[0] == 'C' &&receivedChars[1] == '0' && receivedChars[2] == '2'){
-      Serial.println("C02");
-      checkT02();
-    }
-  }
-}
 void lowerArmNow(){
   for(int i=arm_servo_lowered; i<=arm_servo_raised; i++){
     ArmServo.write(i);
@@ -261,8 +294,115 @@ void backward(){
 }
 
 void stop(){
+  digitalWrite(ledred, HIGH);
   digitalWrite(M11, LOW);
   digitalWrite(M12, LOW);
   digitalWrite(M21, LOW);
   digitalWrite(M22, LOW);
+}
+
+void takeuturn(){
+  digitalWrite(ledwhite, HIGH);
+  analogWrite(M11, 135);
+  digitalWrite(M12, LOW);
+  digitalWrite(M21, LOW);
+  analogWrite(M22, 120);
+  delay(5000);
+  stop();
+  digitalWrite(ledwhite, LOW);
+}
+
+void followPath(int dir){
+  digitalWrite(ledred, LOW);
+  digitalWrite(ledblue, HIGH);
+  //int dir = 1; /* 1 = LEFT, 0 = RIGHT */
+  int s1=digitalRead(L1);
+  int s2=digitalRead(L2);
+  int s3=digitalRead(L3);
+  int s4=digitalRead(L4);
+
+  digitalWrite(ledyellow1, s1);
+  digitalWrite(ledyellow2, s2);
+  digitalWrite(ledyellow3, s3);
+  digitalWrite(ledyellow4, s4);
+// 1111
+  if(s1 && s2 && s3 && s4){
+    stop();
+    delay(250);
+    backward();
+    analogWrite(M12, 120);
+    analogWrite(M22, 120);
+    delay(500);
+  }
+// 1110
+  else if(s1 && s2 && s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 30);
+    delay(50);
+  }
+// 1100
+  else if(s1 && s2 && !s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
+    delay(50);
+  }
+//1001
+  else if(s1 && !s2 && !s3 && s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 1000
+  else if(s1 && !s2 && !s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
+    delay(50);
+  }
+// 0111
+  if(!s1 && s2 && s3 && s4){
+    forward();
+    analogWrite(M11, 30);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0011
+  else if(!s1 && !s2 && s3 && s4){
+    forward();
+    analogWrite(M11, 60);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0001
+  else if(!s1 && !s2 && !s3 && s4){
+    forward();
+    analogWrite(M11, 60);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0000
+  else if(!s1 && !s2 && !s3 && !s4){
+    if (dir){
+      forward();
+      analogWrite(M11, 30);
+      analogWrite(M21, 120);
+    }
+    if (!dir){
+      forward();
+      analogWrite(M11, 120);
+      analogWrite(M21, 30);
+    }
+    delay(50);
+  }
+// every other input
+  else {
+    forward();
+      analogWrite(M11, 120);
+      analogWrite(M21, 120);
+  }
+  digitalWrite(ledblue, LOW);
+  delay(50);
 }
