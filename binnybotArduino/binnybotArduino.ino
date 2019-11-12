@@ -2,7 +2,7 @@
 #include <String.h>
 #include <Servo.h>
 
-#define stopButton 21
+#define stopButton 2
 #define armServoPin 8
 #define sweepServoPin 9
 
@@ -11,7 +11,6 @@
 long ping_duration;
 int ping_distance;
 
-int ledstate = 0;
 #define ledblue 28
 #define ledwhite 29
 #define ledred 22
@@ -31,11 +30,11 @@ int ledstate = 0;
 #define M21 7
 #define M22 6
 
-int arm_servo_lowered = 135;
+int arm_servo_lowered = 110;
 int arm_servo_raised = 50;
 // TODO: Caliberate values of table_edge, sweep_servo_max and sweep_servo_min
 int sweep_servo_min = 70;
-int sweep_servo_max = 160; 
+int sweep_servo_max = 140; 
 int table_edge = 80;
 
 const byte numChars = 64;
@@ -77,9 +76,9 @@ void setup()
   SweepServo.attach(sweepServoPin);
   SweepServo.write(sweep_servo_min);
 
-  // set the data rate for the SoftwareSerial port
+  // set the data rate for the Hardware Serial port 01
   Serial1.begin(9600);
-  delay(2000);
+  delay(3000);
   Serial1.println("binnybotArduino : Hi binnybotESP");
 }
 
@@ -89,10 +88,13 @@ void loop() {
 }
 
 void stopISR(){
+//  Serial1.print("interrupt received; onPath = ");
+//  Serial1.println(onPath);
   if(onPath)
     onPath = false;
-  if(onPath)
-    onPath = false;
+  digitalWrite(ledwhite, onPath);
+//  Serial1.print("reset onPath = ");
+//  Serial1.println(onPath);
 }
 
 void readSoftwareSerialData() {
@@ -127,7 +129,7 @@ void processNewSoftwareSerialData(){
     digitalWrite(ledgreen, LOW);
 
     delay(1000);
-    Serial1.print("binnybotArduino received: ");
+    Serial1.print("bbno rcvd: ");
     Serial1.println(receivedChars);
     newData = false;
 
@@ -150,11 +152,15 @@ void approachT01(){
   delay(1000);
   Serial1.println("Moving towards T01");
   onPath = true;
-
-  while(onPath){
+  digitalWrite(ledwhite, onPath);
+  delay(1000);
+  while(onPath == true){
     followPath(1);
   }
+  digitalWrite(ledwhite, onPath);
   stop();
+  delay(1000);
+  digitalWrite(ledwhite, HIGH);
   delay(1000);
   Serial1.println("Reached T01, lowering arm");
   lowerArmNow();
@@ -162,6 +168,7 @@ void approachT01(){
   Serial1.println("R01");
   delay(1000);
   Serial1.println("Reached T01, start rotation");
+  digitalWrite(ledwhite, LOW);
 }
 void checkT01(){
   delay(1000);
@@ -271,13 +278,13 @@ int checkDistance(){
 }
 
 void lowerArmNow(){
-  for(int i=arm_servo_lowered; i<=arm_servo_raised; i++){
+  for(int i=arm_servo_raised; i<=arm_servo_lowered; i++){
     ArmServo.write(i);
     delay(150);
   }
 }
 void raiseArmNow(){
-  for(int i=arm_servo_raised; i>=arm_servo_lowered; i--){
+  for(int i=arm_servo_lowered; i>=arm_servo_raised; i--){
     ArmServo.write(i);
     delay(150);
   }
@@ -306,7 +313,7 @@ void takeuturn(){
   analogWrite(M11, 135);
   digitalWrite(M12, LOW);
   digitalWrite(M21, LOW);
-  analogWrite(M22, 120);
+  analogWrite(M22, 80);
   delay(5000);
   stop();
   digitalWrite(ledwhite, LOW);
@@ -330,78 +337,78 @@ void followPath(int dir){
     stop();
     delay(250);
     backward();
-    analogWrite(M12, 120);
-    analogWrite(M22, 120);
+    analogWrite(M12, 80);
+    analogWrite(M22, 80);
     delay(500);
   }
 // 1110
   else if(s1 && s2 && s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 30);
+    analogWrite(M11, 80);
+    analogWrite(M21, 20);
     delay(50);
   }
 // 1100
   else if(s1 && s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 60);
+    analogWrite(M11, 80);
+    analogWrite(M21, 40);
     delay(50);
   }
 //1001
   else if(s1 && !s2 && !s3 && s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 120);
+    analogWrite(M11, 80);
+    analogWrite(M21, 80);
     delay(50);
   }
 // 1000
   else if(s1 && !s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 60);
+    analogWrite(M11, 80);
+    analogWrite(M21, 40);
     delay(50);
   }
 // 0111
   if(!s1 && s2 && s3 && s4){
     forward();
-    analogWrite(M11, 30);
-    analogWrite(M21, 120);
+    analogWrite(M11, 20);
+    analogWrite(M21, 80);
     delay(50);
   }
 // 0011
   else if(!s1 && !s2 && s3 && s4){
     forward();
-    analogWrite(M11, 60);
-    analogWrite(M21, 120);
+    analogWrite(M11, 40);
+    analogWrite(M21, 80);
     delay(50);
   }
 // 0001
   else if(!s1 && !s2 && !s3 && s4){
     forward();
-    analogWrite(M11, 60);
-    analogWrite(M21, 120);
+    analogWrite(M11, 40);
+    analogWrite(M21, 80);
     delay(50);
   }
 // 0000
   else if(!s1 && !s2 && !s3 && !s4){
     if (dir){
       forward();
-      analogWrite(M11, 30);
-      analogWrite(M21, 120);
+      analogWrite(M11, 20);
+      analogWrite(M21, 80);
     }
     if (!dir){
       forward();
-      analogWrite(M11, 120);
-      analogWrite(M21, 30);
+      analogWrite(M11, 80);
+      analogWrite(M21, 20);
     }
     delay(50);
   }
 // every other input
   else {
     forward();
-      analogWrite(M11, 120);
-      analogWrite(M21, 120);
+      analogWrite(M11, 80);
+      analogWrite(M21, 80);
   }
   digitalWrite(ledblue, LOW);
   delay(50);
