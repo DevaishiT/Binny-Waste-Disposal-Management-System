@@ -56,7 +56,7 @@ void setup()
   pinMode(ledyellow3, OUTPUT);
   pinMode(ledyellow4, OUTPUT);
   pinMode(ledgreen, OUTPUT);
-
+  digitalWrite(ledred, LOW);
   pinMode(M11, OUTPUT);
   pinMode(M12, OUTPUT);
   pinMode(M21, OUTPUT);
@@ -93,6 +93,7 @@ void stopISR(){
   if(onPath)
     onPath = false;
   digitalWrite(ledwhite, onPath);
+  digitalWrite(ledred, HIGH);
 //  Serial1.print("reset onPath = ");
 //  Serial1.println(onPath);
 }
@@ -149,6 +150,7 @@ void processNewSoftwareSerialData(){
 }
 
 void approachT01(){
+  digitalWrite(ledred, LOW);
   delay(1000);
   Serial1.println("Moving towards T01");
   onPath = true;
@@ -156,11 +158,12 @@ void approachT01(){
   delay(1000);
   while(onPath == true){
     followPath(1);
+    Serial1.println(onPath);
   }
-  digitalWrite(ledwhite, onPath);
-  stop();
+  digitalWrite(ledred, HIGH);
   delay(1000);
-  digitalWrite(ledwhite, HIGH);
+  digitalWrite(ledwhite, LOW);
+  stop();
   delay(1000);
   Serial1.println("Reached T01, lowering arm");
   lowerArmNow();
@@ -201,7 +204,7 @@ void checkT01(){
     onPath = true;
     while (onPath)
     {
-      followPath(1);
+      followPath(0);
     }
     stop();
     takeuturn();
@@ -301,7 +304,6 @@ void backward(){
 }
 
 void stop(){
-  digitalWrite(ledred, HIGH);
   digitalWrite(M11, LOW);
   digitalWrite(M12, LOW);
   digitalWrite(M21, LOW);
@@ -310,17 +312,20 @@ void stop(){
 
 void takeuturn(){
   digitalWrite(ledwhite, HIGH);
-  analogWrite(M11, 135);
+  backward();
+  analogWrite(M12, 120);
+  analogWrite(M22, 120);
+  delay(1500);
+  analogWrite(M11, 120);
   digitalWrite(M12, LOW);
   digitalWrite(M21, LOW);
-  analogWrite(M22, 80);
-  delay(5000);
+  analogWrite(M22, 120);
+  delay(5300);
   stop();
   digitalWrite(ledwhite, LOW);
 }
 
 void followPath(int dir){
-  digitalWrite(ledred, LOW);
   digitalWrite(ledblue, HIGH);
   //int dir = 1; /* 1 = LEFT, 0 = RIGHT */
   int s1=digitalRead(L1);
@@ -337,78 +342,85 @@ void followPath(int dir){
     stop();
     delay(250);
     backward();
-    analogWrite(M12, 80);
-    analogWrite(M22, 80);
+    analogWrite(M12, 120);
+    analogWrite(M22, 120);
     delay(500);
   }
 // 1110
   else if(s1 && s2 && s3 && !s4){
     forward();
-    analogWrite(M11, 80);
-    analogWrite(M21, 20);
+    analogWrite(M11, 120);
+    analogWrite(M21, 30);
     delay(50);
   }
 // 1100
   else if(s1 && s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 80);
-    analogWrite(M21, 40);
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
     delay(50);
   }
 //1001
   else if(s1 && !s2 && !s3 && s4){
     forward();
-    analogWrite(M11, 80);
-    analogWrite(M21, 80);
+    analogWrite(M11, 120);
+    analogWrite(M21, 120);
     delay(50);
   }
 // 1000
   else if(s1 && !s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 80);
-    analogWrite(M21, 40);
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
     delay(50);
   }
 // 0111
   if(!s1 && s2 && s3 && s4){
     forward();
-    analogWrite(M11, 20);
-    analogWrite(M21, 80);
+    analogWrite(M11, 30);
+    analogWrite(M21, 120);
     delay(50);
   }
 // 0011
   else if(!s1 && !s2 && s3 && s4){
     forward();
-    analogWrite(M11, 40);
-    analogWrite(M21, 80);
+    analogWrite(M11, 60);
+    analogWrite(M21, 120);
+    delay(50);
+  }
+// 0100 
+  else if(!s1 && s2 && !s3 && !s4){
+    forward();
+    analogWrite(M11, 120);
+    analogWrite(M21, 60);
     delay(50);
   }
 // 0001
   else if(!s1 && !s2 && !s3 && s4){
     forward();
-    analogWrite(M11, 40);
-    analogWrite(M21, 80);
+    analogWrite(M11, 60);
+    analogWrite(M21, 120);
     delay(50);
   }
 // 0000
   else if(!s1 && !s2 && !s3 && !s4){
     if (dir){
       forward();
-      analogWrite(M11, 20);
-      analogWrite(M21, 80);
+      analogWrite(M11, 30);
+      analogWrite(M21, 120);
     }
     if (!dir){
       forward();
-      analogWrite(M11, 80);
-      analogWrite(M21, 20);
+      analogWrite(M11, 120);
+      analogWrite(M21, 30);
     }
     delay(50);
   }
 // every other input
   else {
     forward();
-      analogWrite(M11, 80);
-      analogWrite(M21, 80);
+      analogWrite(M11, 120);
+      analogWrite(M21, 120);
   }
   digitalWrite(ledblue, LOW);
   delay(50);

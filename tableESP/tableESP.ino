@@ -108,7 +108,7 @@ void onConnectionEstablished()
         delay(100);
       }
       //digitalWrite(M11,LOW);
-      analogWrite(M11,135);
+      analogWrite(M11, 560);
       delay(15000);
       digitalWrite(M11,LOW);
       delay(2000);
@@ -129,7 +129,7 @@ void onConnectionEstablished()
         delay(500);
       }
       //digitalWrite(M11,LOW);
-      analogWrite(M11,135);
+      analogWrite(M11,560);
       delay(15000);
       digitalWrite(M11,LOW);
       delay(2000);

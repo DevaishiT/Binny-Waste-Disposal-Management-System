@@ -94,12 +94,10 @@ void setup()
 void loop() {
   // readSoftwareSerialData();
   // processNewSoftwareSerialData();
-  while(onPathToT01){
-    followPath(1);
-  }
-  stop();
-  digitalWrite(ledred, HIGH);
-  digitalWrite(ledgreen, LOW);
+ lowerArmNow();
+ delay(5000);
+ raiseArmNow();
+ delay(5000);
 }
 
 void stopISR(){
