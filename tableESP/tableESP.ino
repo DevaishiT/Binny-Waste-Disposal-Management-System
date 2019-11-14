@@ -22,8 +22,8 @@
 //#define M12 6
 
 EspMQTTClient client(
-  "Hansu",
-  "hellohello",
+  "AndroidAP",
+  "01234567",
   "hansudows.local",
   "tableESPClient",
   1883
@@ -99,7 +99,7 @@ void onConnectionEstablished()
 // Subscribe to "binny/topic" and display received message to Serial
   client.subscribe("binny/toTableESP", [](const String & payload) {
     Serial.println(payload);
-    if(payload == "R01" || payload == "MR01" || payload == "MoR01"){
+    if(payload == "R01" || payload == "MR01" || payload == "MoR01" || payload == "AR01"){
       client.publish("binny/toBinnybotESP", "Rotating Table 01 now...");
       for(int i=0; i<3; i++){
         digitalWrite(led, HIGH);

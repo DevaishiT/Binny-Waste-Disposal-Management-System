@@ -30,8 +30,16 @@ int ping_distance;
 #define M21 7
 #define M22 6
 
-int arm_servo_lowered = 110;
-int arm_servo_raised = 50;
+int gear1 = 30;
+int gear2 = 60;
+int gear3 = 100;
+int delayBeforeUTurn = 300;
+int delayBefore90Turn = 300;
+int delayForUTurn = 2000;
+int delayFor90Turn = 1500;
+
+int arm_servo_lowered = 130;
+int arm_servo_raised = 45;
 // TODO: Caliberate values of table_edge, sweep_servo_max and sweep_servo_min
 int sweep_servo_min = 70;
 int sweep_servo_max = 140; 
@@ -192,10 +200,12 @@ void checkT01(){
   }
   if(minDist < table_edge){
     lowerArmNow();
-    delay(1000);
-    Serial1.println("R01");
+    // delay(1000);
+    // Serial1.println("R01");
     delay(1000);
     Serial1.println("Remaining kachra found, rotate T01 again");
+    delay(1000);
+    Serial1.println("R01");
   }
   else{
     delay(1000);
@@ -249,6 +259,8 @@ void checkT02(){
     Serial1.println("R02");
     delay(1000);
     Serial1.println("Remaining kachra found, rotate T02 again");
+    delay(1000);
+    Serial1.println("R02");
   }
   else{
     delay(1000);
@@ -313,16 +325,48 @@ void stop(){
 void takeuturn(){
   digitalWrite(ledwhite, HIGH);
   backward();
-  analogWrite(M12, 120);
-  analogWrite(M22, 120);
-  delay(1500);
-  analogWrite(M11, 120);
+  analogWrite(M12, gear3);
+  analogWrite(M22, gear3);
+  delay(700);
+  analogWrite(M11, gear3);
   digitalWrite(M12, LOW);
   digitalWrite(M21, LOW);
-  analogWrite(M22, 120);
-  delay(5300);
+  analogWrite(M22, gear3);
+  delay(2750);
   stop();
   digitalWrite(ledwhite, LOW);
+}
+
+void right90()
+{
+  forward();
+  analogWrite(M11, gear1);
+  analogWrite(M21, gear1);
+  delay(delayBefore90Turn);
+  stop();
+  delay(500);
+  analogWrite(M11, gear2);
+  digitalWrite(M12, LOW);
+  digitalWrite(M21, LOW);
+  analogWrite(M22, gear2);
+  delay(delayFor90Turn);
+  stop();
+}
+
+void left90()
+{
+  forward();
+  analogWrite(M11, gear1);
+  analogWrite(M21, gear1);
+  delay(delayBefore90Turn);
+  stop();
+  delay(500);
+  digitalWrite(M11, LOW);
+  analogWrite(M12, gear2);
+  analogWrite(M21, gear2);
+  digitalWrite(M22, LOW);
+  delay(delayFor90Turn);
+  stop();
 }
 
 void followPath(int dir){
@@ -342,85 +386,88 @@ void followPath(int dir){
     stop();
     delay(250);
     backward();
-    analogWrite(M12, 120);
-    analogWrite(M22, 120);
+    analogWrite(M12, gear3);
+    analogWrite(M22, gear3);
     delay(500);
   }
 // 1110
   else if(s1 && s2 && s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 30);
+    analogWrite(M11, gear3);
+    analogWrite(M21, gear1);
     delay(50);
   }
 // 1100
   else if(s1 && s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 60);
+    analogWrite(M11, gear3);
+    analogWrite(M21, gear2);
     delay(50);
   }
 //1001
   else if(s1 && !s2 && !s3 && s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 120);
+    analogWrite(M11, gear3);
+    analogWrite(M21, gear3);
     delay(50);
   }
 // 1000
   else if(s1 && !s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 60);
+    analogWrite(M11, gear3);
+    analogWrite(M21, gear2);
     delay(50);
   }
 // 0111
   if(!s1 && s2 && s3 && s4){
     forward();
-    analogWrite(M11, 30);
-    analogWrite(M21, 120);
+    analogWrite(M11, gear1);
+    analogWrite(M21, gear3);
     delay(50);
   }
 // 0011
   else if(!s1 && !s2 && s3 && s4){
     forward();
-    analogWrite(M11, 60);
-    analogWrite(M21, 120);
+    analogWrite(M11, gear2);
+    analogWrite(M21, gear3);
     delay(50);
   }
 // 0100 
   else if(!s1 && s2 && !s3 && !s4){
     forward();
-    analogWrite(M11, 120);
-    analogWrite(M21, 60);
+    analogWrite(M11, gear3);
+    analogWrite(M21, gear2);
     delay(50);
   }
 // 0001
   else if(!s1 && !s2 && !s3 && s4){
     forward();
-    analogWrite(M11, 60);
-    analogWrite(M21, 120);
+    analogWrite(M11, gear2);
+    analogWrite(M21, gear3);
     delay(50);
   }
 // 0000
   else if(!s1 && !s2 && !s3 && !s4){
+    Serial1.println("Deciding");
     if (dir){
-      forward();
-      analogWrite(M11, 30);
-      analogWrite(M21, 120);
+     forward();
+     analogWrite(M11, gear1);
+     analogWrite(M21, gear3);
+      //  left90();
     }
     if (!dir){
-      forward();
-      analogWrite(M11, 120);
-      analogWrite(M21, 30);
+     forward();
+     analogWrite(M11, gear3);
+     analogWrite(M21, gear1);
+      //  right90();
     }
-    delay(50);
+    delay(600);
   }
 // every other input
   else {
     forward();
-      analogWrite(M11, 120);
-      analogWrite(M21, 120);
+      analogWrite(M11, gear3);
+      analogWrite(M21, gear3);
   }
   digitalWrite(ledblue, LOW);
   delay(50);

@@ -27,8 +27,8 @@ boolean newData = false;
 SoftwareSerial SoftSerial;
 
 EspMQTTClient client(
-  "Hansu",
-  "hellohello",
+  "AndroidAP",
+  "01234567",
   "hansudows.local",
   "binnybotESPClient",
   1883

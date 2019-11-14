@@ -2,6 +2,6 @@
     "programmer": "AVRISP mkII",
     "board": "arduino:avr:mega",
     "port": "COM6",
-    "sketch": "binnybotArduino\\binnybotArduino.ino",
+    "sketch": "test\\test.ino",
     "configuration": "cpu=atmega2560"
 }
